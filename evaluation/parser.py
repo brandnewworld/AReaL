@@ -641,6 +641,8 @@ def parse_ground_truth(example: Dict[str, Any], data_name):
         "imo2024",
     ]:
         gt_cot, gt_ans = None, example["answer"]
+    elif "deepmath" in data_name:
+        gt_cot, gt_ans = example["r1_solution_1"], example["final_answer"]
     elif data_name.startswith("train"):  # train_amc_aime
         gt_cot, gt_ans = None, example["final_answer"]
     else:

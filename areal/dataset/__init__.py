@@ -45,6 +45,26 @@ def _get_custom_dataset(
             max_length=max_length,
             **kwargs,
         )
+    elif "deepmath" in path and type == "sft":
+        from .deepmath import get_deepmath_sft_dataset
+
+        return get_deepmath_sft_dataset(
+            path=path,
+            split=split,
+            tokenizer=tokenizer,
+            max_length=max_length,
+            **kwargs,
+        )
+    elif "deepmath" in path and type == "rl":
+        from .deepmath import get_deepmath_rl_dataset
+
+        return get_deepmath_rl_dataset(
+            path=path,
+            split=split,
+            tokenizer=tokenizer,
+            max_length=max_length,
+            **kwargs,
+        )
     elif "clevr_count_70k" in path and type == "sft":
         from .clevr_count_70k import get_clevr_count_70k_sft_dataset
 
