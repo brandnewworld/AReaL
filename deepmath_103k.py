@@ -4,8 +4,10 @@ import argparse
 from datasets import load_dataset
 
 DATASET_NAME = "zwhe99/DeepMath-103K"
-TARGET_DIR = "/external/deepmath-10.3k"
+TARGET_DIR = "/external/data/deepmath-10.3k"
 SPLIT_RATIO_TRAIN, SPLIT_RATIO_TEST = 0.10, 0.01
+#TARGET_DIR = "/external/data/deepmath-10.3k-debug"
+#SPLIT_RATIO_TRAIN, SPLIT_RATIO_TEST = 0.0001, 0.0001
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Sample DeepMath-103K dataset for AReaL")

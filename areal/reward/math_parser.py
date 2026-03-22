@@ -779,6 +779,8 @@ def process_results(answer, solution):
         else:
             retval = 0
 
+        #print(f"[DEBUG] {retval=} {answer[-64:]=} {solution=} {extracted_answer=} {extracted_solution=}")
+
         return retval, (extracted_answer, extracted_solution)
     except:
         return 0, ("None", "None")

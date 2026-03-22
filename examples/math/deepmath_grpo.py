@@ -27,8 +27,7 @@ from areal.workflow.rlvr import RLVRWorkflow
 
 def deepmath_reward_fn(prompt, completions, prompt_ids, completion_ids, final_answer, **kwargs):
     from areal.reward.math_parser import process_results
-
-    return int(process_results(completions, final_answer)[0])
+    return int(process_results(completions, f"\\boxed{{{final_answer}}}")[0])
 
 def main(args):
     config, _ = load_expr_config(args, GRPOConfig)
@@ -78,7 +77,11 @@ def main(args):
     elif allocation_mode.gen_backend == "sglang":
         rollout = RemoteSGLangEngine(config.rollout)
     rollout.initialize(train_data_parallel_size=parallel_strategy.dp_size)
-    eval_rollout = RemoteSGLangEngine(deepcopy(config.rollout))
+
+    if allocation_mode.gen_backend == "vllm":
+        eval_rollout = RemotevLLMEngine(deepcopy(config.rollout))
+    elif allocation_mode.gen_backend == "sglang":
+        eval_rollout = RemoteSGLangEngine(deepcopy(config.rollout))
     # NOTE: eval does not have any offpolicyness control
     eval_rollout.config.max_head_offpolicyness = int(1e12)
     eval_rollout.initialize()

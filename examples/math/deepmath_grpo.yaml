@@ -110,7 +110,7 @@ train_dataset:
   shuffle: true
   pin_memory: true
   num_workers: 4
-  path: "/external/data/deepmath-10.3k"
+  path: zwhe99/DeepMath-103K
   type: rl
   max_length: 1024
 
@@ -119,7 +119,8 @@ valid_dataset:
   shuffle: true
   pin_memory: true
   num_workers: 4
-  path: "/external/data/deepmath-10.3k"
+  # validate on train dataset is incorrect
+  path: ${train_dataset.path}
   type: rl
 
 # Utilities
