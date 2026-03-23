@@ -1,7 +1,7 @@
 experiment_name: deepmath_grpo
 trial_name: trial0
 
-seed: 1
+seed: 42
 total_train_epochs: 1
 tokenizer_path: ${actor.path}
 async_training: true
@@ -115,11 +115,11 @@ train_dataset:
   max_length: 1024
 
 valid_dataset:
-  batch_size: 32
+  batch_size: ${train_dataset.batch_size}
   shuffle: true
   pin_memory: true
   num_workers: 4
-  # validate on train dataset is incorrect
+  # validate on train dataset is incorrect unless 'test' split exists
   path: ${train_dataset.path}
   type: rl
 
@@ -154,7 +154,7 @@ stats_logger:
   trial_name: ${trial_name}
   fileroot: ${cluster.fileroot}
   wandb:
-    mode: disabled
+    mode: offline
 
 launcher:
   inference_server_cpus_per_gpu: 6

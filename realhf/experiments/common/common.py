@@ -465,7 +465,7 @@ class CommonExperimentConfig(BaseExperimentConfig, Experiment):
                 hf_config = transformers.AutoConfig.from_pretrained(
                     model_cfg.path,
                     trust_remote_code=True,
-                    force_download=True,
+                    force_download=False,
                 )
                 model_config = HF_MODEL_FAMILY_REGISTRY[model_cfg.type._class][
                     "config_from_hf_converter"

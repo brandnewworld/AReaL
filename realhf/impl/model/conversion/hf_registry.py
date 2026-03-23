@@ -56,7 +56,7 @@ class HFModelRegistry:
             hf_config = transformers.AutoConfig.from_pretrained(
                 model_path,
                 trust_remote_code=True,
-                force_download=True,
+                force_download=False,
             )
         config = self.config_from_hf_converter(hf_config)
         config.base_model_path = model_path
