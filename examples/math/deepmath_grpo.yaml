@@ -38,13 +38,13 @@ actor:
   path: Qwen/Qwen3-1.7B
   init_from_scratch: false
   disable_dropout: true
-  gradient_checkpointing: false
+  gradient_checkpointing: true
   dtype: bfloat16
   mb_spec:
     max_tokens_per_mb: 10240
   optimizer:
     type: adam
-    lr: 1.70e-5
+    lr: 3e-6
     weight_decay: 0.017
     beta1: 0.9
     beta2: 0.999

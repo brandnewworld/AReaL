@@ -14,6 +14,7 @@ notify() {
 ################ 1 ################
 
 ACTOR_PATH="Qwen/Qwen3-1.7B"
+#ALLOCATION_MODE="vllm:d1t1+fsdp:d1"
 ALLOCATION_MODE="vllm:d2t1+fsdp:d2"
 #ALLOCATION_MODE="'vllm:d2t1|fsdp:d2'"
 AREAL_ROOT="/external/tmp/areal"
@@ -29,6 +30,7 @@ ACTOR_PATH=${ACTOR_PATH:-"Qwen/Qwen3-1.7B"}
 ALLOCATION_MODE=${ALLOCATION_MODE:-"vllm:d2t1+fsdp:d2"}
 AREAL_ROOT=${AREAL_ROOT:-"/external/tmp/areal"}
 BATCH_SIZE=${BATCH_SIZE:-32}
+EVAL_FREQ_STEPS=${EVAL_FREQ_STEPS:-"null"}
 GRPO_N_SAMPLES=${GRPO_N_SAMPLES:-4}
 MAX_CONCURRENT_ROLLOUTS=${MAX_CONCURRENT_ROLLOUTS:-$(( BATCH_SIZE * GRPO_N_SAMPLES ))}
 MAX_HEAD_OFFPOLICYNESS=${MAX_HEAD_OFFPOLICYNESS:-5}
@@ -58,6 +60,7 @@ PYTHONPATH=. python3 -m areal.launcher.local examples/math/deepmath_grpo.py \
     cluster.fileroot="${AREAL_ROOT}/experiments" \
     cluster.n_gpus_per_node=${N_GPUS_PER_NODE} \
     cluster.n_nodes=1 \
+    evaluator.freq_steps=${EVAL_FREQ_STEPS} \
     experiment_name="EXP_${EXT_MODEL_NAME}" \
     gconfig.max_new_tokens=${MAX_NEW_TOKENS} \
     gconfig.n_samples=${GRPO_N_SAMPLES} \
