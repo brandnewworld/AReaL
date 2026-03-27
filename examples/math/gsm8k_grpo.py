@@ -108,7 +108,8 @@ def main(args):
     )
     eval_workflow = RLVRWorkflow(
         reward_fn=gsm8k_reward_fn,
-        gconfig=config.gconfig.new(temperature=0.6),
+        # GRPO algorithm requires `gconfig.n_samples` > 1, which is for training rather than validation purposes
+        gconfig=config.gconfig.new(temperature=1.0, n_samples=1),
         tokenizer=tokenizer,
         enable_thinking=False,
         rollout_stat_scope="eval-rollout",
