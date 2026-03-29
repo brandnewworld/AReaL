@@ -25,6 +25,8 @@ from areal.utils.saver import Saver
 from areal.utils.stats_logger import StatsLogger
 from areal.workflow.rlvr import RLVRWorkflow
 
+PRESET_MAX_STEPS = 258
+
 def deepmath_reward_fn(prompt, completions, prompt_ids, completion_ids, final_answer, **kwargs):
     from areal.reward.math_parser import process_results
     return int(process_results(completions, f"\\boxed{{{final_answer}}}")[0])
@@ -110,7 +112,7 @@ def main(args):
     )
     eval_workflow = RLVRWorkflow(
         reward_fn=deepmath_reward_fn,
-        gconfig=config.gconfig.new(temperature=0.6),
+        gconfig=config.gconfig.new(temperature=1.0, n_samples=1),
         tokenizer=tokenizer,
         enable_thinking=True,
         rollout_stat_scope="eval-rollout",
@@ -139,7 +141,7 @@ def main(args):
 
     total_epochs = config.total_train_epochs
     steps_per_epoch = len(train_dataloader)
-    max_steps = total_epochs * steps_per_epoch
+    max_steps = min(total_epochs * steps_per_epoch, PRESET_MAX_STEPS)
 
     data_generator = cycle_dataloader(train_dataloader)
     for global_step in range(start_step, max_steps):

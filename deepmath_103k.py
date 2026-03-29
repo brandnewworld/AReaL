@@ -3,11 +3,12 @@ import random
 import argparse
 from datasets import load_dataset
 
+BASEDIR = os.environ['HOME']
+TEST_SIZE = 128
+TRAIN_SIZE = 16384
+
 DATASET_NAME = "zwhe99/DeepMath-103K"
-TARGET_DIR = os.environ['HOME'] + "/data/deepmath-10.3k"
-SPLIT_RATIO_TRAIN, SPLIT_RATIO_TEST = 0.10, 0.01
-#TARGET_DIR = "/external/data/deepmath-10.3k-debug"
-#SPLIT_RATIO_TRAIN, SPLIT_RATIO_TEST = 0.0001, 0.0001
+TARGET_DIR = BASEDIR + "/data/deepmath-16k"
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Sample DeepMath-103K dataset for AReaL")
@@ -26,8 +27,11 @@ if __name__ == '__main__':
     total_size = len(total_data)
     print(f"Original dataset size: {total_size}")
 
-    train_size = int(total_size * SPLIT_RATIO_TRAIN)
-    test_size = int(total_size * SPLIT_RATIO_TEST)
+    train_size = TRAIN_SIZE
+    test_size = TEST_SIZE
+
+    if train_size + test_size > total_size:
+        raise ValueError(f"Requested sizes ({train_size} + {test_size}) exceed total dataset size ({total_size})!")
 
     print(f"Sampling {train_size} for train and {test_size} for test...")
 

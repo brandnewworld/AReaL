@@ -48,6 +48,7 @@ class RLVRWorkflow(RolloutWorkflow):
     ):
         self.reward_fn = reward_fn
         self.gconfig = gconfig
+        print(f"[DEBUG] {self.gconfig.n_samples=}")
         self.tokenizer = tokenizer
         self.enable_thinking = enable_thinking
         self.dump_dir = dump_dir

@@ -16,16 +16,17 @@ notify() {
 
 ################ 1 ################
 
-ACTOR_PATH="Qwen/Qwen3-1.7B"
+ACTOR_PATH="Qwen/Qwen3-4B"
 #ALLOCATION_MODE="vllm:d1t1+fsdp:d1"
-ALLOCATION_MODE="vllm:d2t1+fsdp:d2"
+ALLOCATION_MODE="vllm:d4t1+fsdp:d4"
 #ALLOCATION_MODE="'vllm:d2t1|fsdp:d2'"
-AREAL_ROOT="${DEV_ROOT_PATH}/tmp/areal"
+AREAL_ROOT="/tmp/areal"
 BATCH_SIZE=32
+EVAL_FREQ_STEPS=4
 GRPO_N_SAMPLES=8
 MAX_NEW_TOKENS=8192
 TOTAL_TRAIN_EPOCHS=1
-#TRAIN_DATASET_PATH="${DEV_ROOT_PATH}/data/deepmath-10.3k-debug"
+TRAIN_DATASET_PATH="${DEV_ROOT_PATH}/data/deepmath-16k"
 VLLM_MEM_UTIL=0.9
 
 ################ 2 ################
@@ -51,6 +52,9 @@ VLLM_MEM_UTIL=${VLLM_MEM_UTIL:-0.9}
 EXT_MODEL_NAME="${ACTOR_PATH##*/}"
 N_GPUS_PER_NODE=${N_GPUS_PER_NODE:-$(nvidia-smi -L | wc -l)}
 export HF_HUB_OFFLINE=1
+export NCCL_DEBUG=INFO
+# https://github.com/pytorch/pytorch/issues/137505
+#export TORCH_DISTRIBUTED_DEBUG=DETAIL
 
 # actor.mb_spec.max_tokens_per_mb
 # max_concurrent_rollouts
