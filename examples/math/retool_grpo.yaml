@@ -1,0 +1,168 @@
+experiment_name: retool_grpo
+trial_name: trial0
+
+seed: 42
+total_train_epochs: 1
+total_train_steps: null
+tokenizer_path: ${actor.path}
+async_training: true
+
+cluster:
+  n_nodes: 1
+  n_gpus_per_node: 8
+  fileroot: /tmp/areal/experiments
+  name_resolve:
+    type: nfs
+    nfs_record_root: /tmp/areal/name_resolve
+
+allocation_mode: vllm.d4p1t1+d4p1t1
+
+rollout:
+  experiment_name: ${experiment_name}
+  trial_name: ${trial_name}
+  max_concurrent_rollouts: 128
+  queue_size: null
+  consumer_batch_size: ${train_dataset.batch_size}
+  max_head_offpolicyness: 5
+  enable_rollout_tracing: false
+
+gconfig:
+  n_samples: 4
+  min_new_tokens: 0
+  max_new_tokens: 16384
+  greedy: false
+  temperature: 1.0
+  top_p: 1.0
+
+retool:
+  max_turns: 8
+  max_total_tokens: 18432
+  tool_timeout_s: 10
+  tool_memory_limit_mb: 1024
+  tool_max_output_chars: 4096
+  tool_max_response_length_chars: 1024
+  enable_thinking: true
+
+actor:
+  experiment_name: ${experiment_name}
+  trial_name: ${trial_name}
+  path: Qwen/Qwen3-4B
+  init_from_scratch: false
+  disable_dropout: true
+  gradient_checkpointing: true
+  dtype: bfloat16
+  mb_spec:
+    max_tokens_per_mb: 32768
+  optimizer:
+    type: adam
+    lr: 5e-6
+    weight_decay: 0.017
+    beta1: 0.9
+    beta2: 0.999
+    eps: 1e-8
+    lr_scheduler_type: constant
+    gradient_clipping: 1.0
+    warmup_steps_proportion: 0.001
+  backend: fsdp
+  group_size: ${gconfig.n_samples}
+  eps_clip: 0.2
+  temperature: ${gconfig.temperature}
+  reward_scaling: 1.0
+  reward_bias: 0.0
+  kl_ctl: 0.0
+  ppo_n_minibatches: 4
+  recompute_logprob: true
+  use_decoupled_loss: false
+  behav_imp_weight_cap: null
+  dynamic_sampling: false
+  reward_norm:
+    mean_level: group
+    std_level: group
+    group_size: ${gconfig.n_samples}
+  adv_norm: null
+  max_new_tokens: ${gconfig.max_new_tokens}
+
+ref:
+  experiment_name: ${experiment_name}
+  trial_name: ${trial_name}
+  path: ${actor.path}
+  init_from_scratch: false
+  disable_dropout: true
+  dtype: ${actor.dtype}
+  mb_spec:
+    max_tokens_per_mb: 32768
+  optimizer: null
+  backend: fsdp
+
+sglang:
+  model_path: ${actor.path}
+  random_seed: ${seed}
+  skip_tokenizer_init: true
+  dtype: ${actor.dtype}
+  max_running_requests: null
+  context_length: 32768
+  mem_fraction_static: 0.9
+
+vllm:
+  model: ${actor.path}
+  seed: ${seed}
+  skip_tokenizer_init: false
+  dtype: ${actor.dtype}
+  max_model_len: 32768
+  gpu_memory_utilization: 0.9
+
+train_dataset:
+  batch_size: 32
+  shuffle: false
+  pin_memory: true
+  num_workers: 4
+  path: /external/InnovationLab/data/retool-dapo-math-scout-toolmandate/train.parquet
+  type: rl
+  max_length: 2048
+
+valid_dataset:
+  batch_size: ${train_dataset.batch_size}
+  shuffle: false
+  pin_memory: true
+  num_workers: 4
+  path: /external/InnovationLab/data/retool-dapo-math-scout-toolmandate/test_mini128.parquet
+  type: rl
+  max_length: 2048
+
+saver:
+  experiment_name: ${experiment_name}
+  trial_name: ${trial_name}
+  fileroot: ${cluster.fileroot}
+  freq_epochs: 1
+  freq_steps: null
+  freq_secs: null
+
+recover:
+  mode: disabled
+  experiment_name: ${experiment_name}
+  trial_name: ${trial_name}
+  fileroot: ${cluster.fileroot}
+  freq_epochs: 1
+  freq_steps: null
+  freq_secs: 3600
+
+evaluator:
+  experiment_name: ${experiment_name}
+  trial_name: ${trial_name}
+  fileroot: ${cluster.fileroot}
+  freq_epochs: null
+  freq_steps: 5
+  freq_secs: null
+
+stats_logger:
+  experiment_name: ${experiment_name}
+  trial_name: ${trial_name}
+  fileroot: ${cluster.fileroot}
+  wandb:
+    mode: offline
+
+launcher:
+  inference_server_cpus_per_gpu: 6
+  inference_server_mem_per_gpu: 28672
+  trainer_cpus_per_gpu: 6
+  trainer_mem_per_gpu: 28672

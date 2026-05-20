@@ -1,0 +1,67 @@
+本次会话的改动与 Smoke Test 记录
+=================================
+
+背景
+----
+将 verl-0519 的实验脚本
+  scripts/experiment_runs/bs32_n4_onpolicy_8gpu_lr5e6_minibs8_grpo.sh
+移植 (port) 到 areal-0520。原 verl 脚本使用：
+  - 数据集 : /external/InnovationLab/data/retool-dapo-math-scout-toolmandate
+             (train.parquet / test_mini128.parquet)
+  - 奖励   : recipe/retool/retool_tool_required.py 中的 compute_score
+  - Rollout: hermes 格式多轮工具调用 (code_interpreter)，max_turns=8
+
+AReaL 侧相应的实现 (此前已存在，本会话未改动)：
+  - 启动脚本   : run_qwen3_0520.sh
+  - 训练入口   : examples/math/retool_grpo.py + retool_grpo.yaml
+  - 数据加载   : examples/math/retool_dataset.py
+  - 奖励       : examples/math/retool_reward.py
+  - 工具与流程 : examples/math/retool_tool.py, retool_workflow.py
+
+本会话的 Plan
+-------------
+用户上一次 smoke test 中断，并已切换容器镜像。此次任务是在新镜像
+下重新跑通 run_qwen3_0520.sh 的 smoke test，必要时修正路径/配置
+问题，直到至少完成 1 个 GRPO 训练 step 并验证奖励语义对得上
+verl 中的 compute_score。
+
+本次实际修改 (仅 run_qwen3_0520.sh)
+-----------------------------------
+1) 模型路径改为本地绝对路径
+   新镜像内未缓存 HuggingFace repo Qwen/Qwen3-4B，且脚本设
+   HF_HUB_OFFLINE=1，原写法 "Qwen/Qwen3-4B" 会触发
+   LocalEntryNotFoundError。改为：
+     ACTOR_PATH="/external/InnovationLab/models/Qwen/Qwen3-4B"
+   block #1 与 block #2 的默认值都改了。
+
+2) 数据集路径硬编码到 /external/InnovationLab/data
+   原脚本默认 DEV_ROOT_PATH=$HOME，把数据路径拼成
+     /root/data/retool-dapo-math-scout-toolmandate/...
+   该路径在容器里不存在，rank 全部抛 FileNotFoundError。改为：
+     TRAIN_DATASET_PATH=/external/InnovationLab/data/retool-dapo-math-scout-toolmandate/train.parquet
+     VALID_DATASET_PATH=/external/InnovationLab/data/retool-dapo-math-scout-toolmandate/test_mini128.parquet
+   block #1 与 block #2 都改了。
+   注意：VALID 不再回退到 TRAIN，按 verl 脚本语义指向 test_mini128。
+
+除以上两处之外，未改动任何源代码、yaml 或其他文件。
+
+Smoke Test 结果 (R20260520204258.log)
+------------------------------------
+- 镜像 / GPU / 进程：8x A800 80GB，416 个 worker 全程存活。
+- 拓扑：vllm:d4t1 + fsdp:d4 (4 推理 + 4 训练，TP=1)，与 AReaL
+  原 4+4 风格一致。
+- 推理：4 个 vLLM engine 各 ~100+ 并发 rollout，prefix cache
+  命中率 92~95%，生成速率约 1.7~2.0k tok/s/engine。
+- 训练：第一个 GRPO step 完成，ppo_n_minibatches = 4/4，
+  update_successful = 1.0，lr = 5.0e-6，timeperf/train_step ≈ 32s。
+- 奖励语义对齐验证 (与 verl retool_tool_required.compute_score 一致)：
+    task_reward/avg ≈ -0.909
+    task_reward/min = -1.0    (无工具调用或格式非法)
+    task_reward/max = -0.6    (= -1.0 + 0.1×4，4 次合法 tool call
+                               但答案错误；首批未见答对样本，
+                               未训练的 Qwen3-4B 属正常)
+    rollout/reward  ≈ -0.914  (与 task_reward 一致)
+
+结论：新镜像下，模型加载、Parquet 数据读取、Hermes 多轮工具
+调用 rollout、奖励计算、GRPO 更新整条链路全部跑通；AReaL 的奖励
+与 verl 中 retool_tool_required.compute_score 在语义上对齐。
