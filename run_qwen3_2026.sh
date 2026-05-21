@@ -52,7 +52,7 @@ VLLM_MEM_UTIL=${VLLM_MEM_UTIL:-0.9}
 EXT_MODEL_NAME="${ACTOR_PATH##*/}"
 N_GPUS_PER_NODE=${N_GPUS_PER_NODE:-$(nvidia-smi -L | wc -l)}
 export HF_HUB_OFFLINE=1
-export NCCL_DEBUG=INFO
+export NCCL_DEBUG=WARNING
 # https://github.com/pytorch/pytorch/issues/137505
 #export TORCH_DISTRIBUTED_DEBUG=DETAIL
 

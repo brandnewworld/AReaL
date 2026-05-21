@@ -45,6 +45,7 @@ from areal.api.workflow_api import RolloutWorkflow
 from areal.utils import logging, stats_tracker
 from areal.utils.data import concat_padded_tensors
 
+from examples.math.retool_reward import compute_score
 from examples.math.retool_tool import _truncate, run_code_interpreter
 
 logger = logging.getLogger("Retool workflow")
@@ -98,7 +99,7 @@ class RetoolWorkflow(RolloutWorkflow):
             tokenize=True,
             enable_thinking=self.cfg.enable_thinking,
         )
-        prompt_str = self.tokenizer.decode(prompt_ids)
+        prompt_str = self.tokenizer.decode(prompt_ids, skip_special_tokens=True)
         n_samples = self.gconfig.n_samples
         results = await asyncio.gather(
             *[
@@ -168,7 +169,9 @@ class RetoolWorkflow(RolloutWorkflow):
             logprobs.extend(resp.output_logprobs)
             loss_mask.extend([1] * resp.output_len)
             versions.extend(resp.output_versions)
-            decoded = self.tokenizer.decode(resp.output_tokens)
+            decoded = self.tokenizer.decode(
+                resp.output_tokens, skip_special_tokens=True
+            )
             completion_str += decoded
 
             open_count = decoded.count(TOOL_CALL_OPEN)
@@ -219,7 +222,9 @@ class RetoolWorkflow(RolloutWorkflow):
             logprobs.extend([0.0] * len(response_ids))
             loss_mask.extend([0] * len(response_ids))
             versions.extend([-1] * len(response_ids))
-            completion_str += self.tokenizer.decode(response_ids)
+            completion_str += self.tokenizer.decode(
+                response_ids, skip_special_tokens=True
+            )
             turn += 1
 
         # Hard cap at max_total_tokens.
@@ -230,17 +235,20 @@ class RetoolWorkflow(RolloutWorkflow):
             versions = versions[: self.cfg.max_total_tokens]
 
         completion_ids = seq[len(prompt_ids):]
-        reward = await self.async_reward_fn(
-            prompt_str,
-            completion_str,
-            prompt_ids,
-            completion_ids,
-            **data,
+        score_info = await asyncio.to_thread(
+            compute_score, completion_str, data["ground_truth"]
         )
-        reward = float(reward)
+        reward = float(score_info["score"])
 
         stats_tracker.get(self.rollout_stat_scope).scalar(
             reward=reward,
+            acc=float(bool(score_info.get("acc"))),
+            acc_tool_required=float(score_info.get("acc_tool_required", 0.0)),
+            n_tool=int(score_info.get("n_tool", 0)),
+            raw_tool_calls=int(score_info.get("raw_tool_calls", 0)),
+            malformed_tool_calls=int(score_info.get("malformed_tool_calls", 0)),
+            tool_format_invalid=int(bool(score_info.get("tool_format_invalid"))),
+            tool_spam=int(bool(score_info.get("tool_spam"))),
             num_turns=turn,
             stopped_normally=int(stopped_normally),
             seq_len=len(seq),

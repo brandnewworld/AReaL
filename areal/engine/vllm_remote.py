@@ -31,6 +31,7 @@ class VLLMBackend:
             raise NotImplementedError("vLLM does not support LoRA training.")
         gconfig = req.gconfig
         stop_token_ids = gconfig.stop_token_ids
+        stop = gconfig.stop
 
         # NOTE: vLLM uses flat payload structure, not nested sampling_params
         payload = {
@@ -44,6 +45,8 @@ class VLLMBackend:
             "logprobs": 0,
             "stream": False,
         }
+        if stop:
+            payload["stop"] = stop
 
         return HttpRequest(endpoint="/v1/completions", payload=payload)
 

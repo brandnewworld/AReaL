@@ -66,7 +66,7 @@ VLLM_MEM_UTIL=${VLLM_MEM_UTIL:-0.85}
 EXT_MODEL_NAME="${ACTOR_PATH##*/}"
 N_GPUS_PER_NODE=${N_GPUS_PER_NODE:-$(nvidia-smi -L | wc -l)}
 export HF_HUB_OFFLINE=1
-export NCCL_DEBUG=INFO
+export NCCL_DEBUG=WARNING
 
 PYTHONPATH=. python3 -m areal.launcher.local examples/math/retool_grpo.py \
     --config examples/math/retool_grpo.yaml \
